@@ -9,28 +9,31 @@
 <body>
     <h1>Productos en Tiempo Real</h1>
 
+    <!-- Formulario para agregar productos -->
     <form id="productForm">
         <label for="name">Nombre del producto:</label>
-        <input type="text" id="name" name="name" required>
+        <input type="text" id="name" name="name" required placeholder="Nombre del producto">
         
         <label for="price">Precio:</label>
-        <input type="number" id="price" name="price" required>
+        <input type="number" id="price" name="price" required placeholder="Precio del producto">
         
         <button type="submit">Agregar producto</button>
     </form>
 
+    <!-- Lista de productos -->
     <ul id="productList">
-
+        <!-- Los productos se mostrarán aquí -->
     </ul>
 
     <script>
-        const socket = io();
+        const socket = io(); // Inicializar conexión con Socket.IO
         const productList = document.getElementById('productList');
         const productForm = document.getElementById('productForm');
 
+        // Escuchar eventos de WebSocket para agregar nuevos productos
         socket.on('newProduct', (product) => {
             const newItem = document.createElement('li');
-            newItem.id = product._id; 
+            newItem.id = `product-${product._id}`;
             newItem.innerHTML = `
                 ${product.name} - $${product.price}
                 <button onclick="deleteProduct('${product._id}')">Eliminar</button>
@@ -38,52 +41,71 @@
             productList.appendChild(newItem);
         });
 
+        // Escuchar eventos de WebSocket para eliminar productos
         socket.on('deleteProduct', (product) => {
-            const productToRemove = document.getElementById(product._id);
+            const productToRemove = document.getElementById(`product-${product._id}`);
             if (productToRemove) {
                 productList.removeChild(productToRemove);
             }
         });
 
-        productForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(productForm);
+        // Manejar el envío del formulario
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evitar recargar la página
+
+            const name = document.getElementById('name').value.trim();
+            const price = parseFloat(document.getElementById('price').value);
+
+            // Validar campos antes de enviar
+            if (!name || isNaN(price) || price <= 0) {
+                alert('Por favor, completa todos los campos correctamente.');
+                return;
+            }
+
             const productData = {
-                name: formData.get('name'),
-                price: formData.get('price')
+                name,
+                price,
+                category: 'Tiempo Real', // Categoría predeterminada
+                availability: true,
             };
 
-            fetch('/api/products', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(productData)
-            })
-            .then(response => response.json())
-            .then(product => {
-                console.log('Producto agregado:', product);
-                productForm.reset();
-            })
-            .catch(error => {
-                console.error('Error al agregar el producto:', error);
-            });
+            try {
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(productData),
+                });
+
+                const responseData = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(responseData.message || 'No se pudo agregar el producto');
+                }
+
+                console.log('Producto agregado:', responseData);
+                productForm.reset(); // Reiniciar el formulario
+            } catch (error) {
+                console.error('Error al agregar el producto:', error.message);
+            }
         });
 
-        function deleteProduct(productId) {
-            fetch(`/api/products/${productId}`, {
-                method: 'DELETE'
-            })
-            .then(response => {
+        // Función para eliminar un producto
+        async function deleteProduct(productId) {
+            try {
+                const response = await fetch(`/api/products/${productId}`, {
+                    method: 'DELETE',
+                });
+
                 if (response.ok) {
                     console.log('Producto eliminado');
                 } else {
                     console.error('Error al eliminar el producto');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
-            });
+            }
         }
     </script>
 </body>

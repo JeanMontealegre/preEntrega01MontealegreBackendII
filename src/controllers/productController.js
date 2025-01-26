@@ -1,6 +1,6 @@
 import Product from '../models/Product.js';
 
-// obtener todos los productos con paginacion, filtros y ordenamiento
+// Obtener todos los productos con paginación, filtros y ordenamiento
 export const getAllProducts = async (req, res) => {
   try {
     const { page = 1, limit = 10, sort = 'asc', query = '', available } = req.query;
@@ -18,7 +18,7 @@ export const getAllProducts = async (req, res) => {
     }
 
     if (available) {
-      filter.availability = available === 'true'; 
+      filter.availability = available === 'true';
     }
 
     const products = await Product.paginate(filter, options);
@@ -44,7 +44,7 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
-// crear un nuevo producto
+// Crear un nuevo producto
 export const createProduct = async (req, res) => {
   try {
     const { name, price, category, availability } = req.body;
@@ -61,15 +61,20 @@ export const createProduct = async (req, res) => {
     });
 
     await newProduct.save();
-    req.app.get('io').emit('newProduct', newProduct);
-    res.status(201).json(newProduct);
+
+    // Emitir evento si Socket.IO está configurado (opcional)
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('newProduct', newProduct);
+    }
+
+    res.status(201).json({ message: 'Producto creado con éxito', product: newProduct });
   } catch (error) {
-    console.error('Error al crear producto:', error);
-    res.status(500).json({ message: 'No se pudo crear el producto' });
+    res.status(500).json({ message: 'No se pudo crear el producto', error: error.message });
   }
 };
 
-// actualizar un producto por su ID
+// Actualizar un producto por su ID
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -79,15 +84,18 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ message: 'Producto no encontrado' });
     }
 
-    req.app.get('io').emit('updateProduct', updatedProduct);
-    res.status(200).json(updatedProduct);
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('updateProduct', updatedProduct);
+    }
+
+    res.status(200).json({ message: 'Producto actualizado con éxito', product: updatedProduct });
   } catch (error) {
-    console.error('Error al actualizar producto:', error);
-    res.status(500).json({ message: 'No se pudo actualizar el producto' });
+    res.status(500).json({ message: 'No se pudo actualizar el producto', error: error.message });
   }
 };
 
-// eliminar un producto por su ID
+// Eliminar un producto por su ID
 export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -97,10 +105,13 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ message: 'Producto no encontrado' });
     }
 
-    req.app.get('io').emit('deleteProduct', deletedProduct);
-    res.status(200).json({ message: 'Producto eliminado', deletedProduct });
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('deleteProduct', deletedProduct);
+    }
+
+    res.status(200).json({ message: 'Producto eliminado', product: deletedProduct });
   } catch (error) {
-    console.error('Error al eliminar producto:', error);
-    res.status(500).json({ message: 'No se pudo eliminar el producto' });
+    res.status(500).json({ message: 'No se pudo eliminar el producto', error: error.message });
   }
 };

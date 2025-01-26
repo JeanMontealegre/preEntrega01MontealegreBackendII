@@ -8,16 +8,16 @@ import {
 
 const router = express.Router();
 
-// obtener todos los productos (GET /api/products)
+// Obtener todos los productos
 router.get('/', getAllProducts);
 
-// crear un nuevo producto (POST /api/products)
+// Crear un nuevo producto
 router.post('/', createProduct);
 
-// actualizar un producto por su ID (PUT /api/products/:id)
+// Actualizar un producto por su ID
 router.put('/:id', updateProduct);
 
-// eliminar un producto por su ID (DELETE /api/products/:id)
+// Eliminar un producto por su ID
 router.delete('/:id', deleteProduct);
 
 export default router;

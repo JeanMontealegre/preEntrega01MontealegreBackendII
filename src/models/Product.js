@@ -20,8 +20,10 @@ const productSchema = new mongoose.Schema({
   },
 });
 
+// Plugin de paginación
 productSchema.plugin(mongoosePaginate);
 
 const Product = mongoose.model('Product', productSchema);
 
 export default Product;
+
